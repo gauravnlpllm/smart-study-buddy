@@ -1,0 +1,139 @@
+# Smart Study Buddy - AI Prompts
+
+# Prompt for generating quiz questions
+GENERATE_QUIZ_PROMPT = """
+You are an expert educational content creator. Your task is to generate quiz questions based on the provided study material.
+
+Study Material:
+{material}
+
+Instructions:
+1. Generate {num_questions} multiple-choice questions
+2. Each question should have 4 options (A, B, C, D)
+3. Provide the correct answer and a clear explanation
+4. Vary the difficulty level (easy, medium, hard)
+5. Focus on testing understanding, not just memorization
+
+Format your response as a JSON object with the following structure:
+{{
+    "questions": [
+        {{
+            "question": "Question text here?",
+            "options": ["Option A", "Option B", "Option C", "Option D"],
+            "correct_answer": "A",
+            "explanation": "Explanation of why this is correct.",
+            "difficulty": "easy|medium|hard"
+        }}
+    ]
+}}
+"""
+
+# Prompt for generating explanations
+EXPLANATION_PROMPT = """
+You are a patient and skilled tutor. Explain the following concept in a clear, easy-to-understand way.
+
+Concept:
+{concept}
+
+Additional context from the study material:
+{context}
+
+Instructions:
+1. Start with a simple, clear definition
+2. Provide a real-world example if applicable
+3. Break down complex ideas into smaller parts
+4. Use analogies to help understanding
+5. Keep the explanation concise but thorough
+
+Format your response as clear, readable text.
+"""
+
+# Prompt for answer evaluation
+EVALUATE_ANSWER_PROMPT = """
+You are an expert evaluator. Evaluate the user's answer against the correct answer and provide feedback.
+
+Question:
+{question}
+
+Correct Answer:
+{correct_answer}
+
+User's Answer:
+{user_answer}
+
+Instructions:
+1. Determine if the user's answer is correct or partially correct
+2. Provide constructive feedback
+3. Explain why the answer is correct/incorrect
+4. Suggest improvements if needed
+
+Format your response as a JSON object:
+{{
+    "is_correct": true|false,
+    "feedback": "Your feedback here",
+    "explanation": "Detailed explanation"
+}}
+"""
+
+# Prompt for adaptive difficulty adjustment
+ADAPTIVE_PROMPT = """
+You are an adaptive learning system. Based on the user's performance, determine the appropriate difficulty level for the next set of questions.
+
+User's recent performance:
+- Correct answers: {correct}
+- Incorrect answers: {incorrect}
+- Total questions: {total}
+- Recent accuracy: {accuracy}%
+
+Previous difficulty level: {current_difficulty}
+
+Instructions:
+1. If accuracy is above 80%, increase difficulty
+2. If accuracy is between 60-80%, maintain current difficulty
+3. If accuracy is below 60%, decrease difficulty
+4. Suggest the next difficulty level
+
+Return only: "easy", "medium", or "hard"
+"""
+
+# Prompt for generating study plan
+STUDY_PLAN_PROMPT = """
+You are an expert learning strategist. Create a personalized study plan based on the user's goals and current progress.
+
+User's goals:
+{goals}
+
+Current progress:
+{progress}
+
+Study materials available:
+{materials}
+
+Instructions:
+1. Create a weekly study schedule
+2. Include specific topics to cover each day
+3. Suggest practice questions and quizzes
+4. Include review sessions
+5. Set achievable milestones
+
+Format your response as a structured study plan with clear daily/weekly objectives.
+"""
+
+# Prompt for concept clarification
+CLARIFY_CONCEPT_PROMPT = """
+You are a patient tutor. The user is struggling with a concept. Provide multiple explanations to help them understand.
+
+Concept:
+{concept}
+
+User's confusion:
+{confusion}
+
+Instructions:
+1. Provide 2-3 different explanations using different approaches
+2. Use analogies and real-world examples
+3. Break down the concept step by step
+4. Identify common misconceptions
+
+Format your response with clear sections for each explanation approach.
+"""

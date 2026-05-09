@@ -1,0 +1,20 @@
+# Smart Study Buddy - Python Dependencies
+# Core web framework
+streamlit>=1.31.0
+
+# AI/LLM Integration
+openai>=1.12.0
+google-genai>=0.1.0
+
+# PDF Processing
+pdfplumber>=0.10.0
+PyPDF2>=3.0.0
+
+# Database
+# SQLite is included with Python standard library
+
+# Data processing
+python-dotenv>=1.0.0
+
+# Utilities
+requests>=2.31.0
