@@ -320,7 +320,9 @@ class StudyBuddyUI:
         
         for i, question in enumerate(questions):
             user_answer = answers.get(i)
-            is_correct = user_answer == question.correct_answer
+            
+            # Use SmartStudyBuddy's evaluation logic if available, or implement robust matching
+            is_correct = self._evaluate_answer_robust(question, user_answer)
             
             if is_correct:
                 correct_count += 1
@@ -388,7 +390,7 @@ class StudyBuddyUI:
         
         for i, question in enumerate(results.get('questions', [])):
             user_answer = results.get('answers', {}).get(i)
-            is_correct = user_answer == question.correct_answer
+            is_correct = self._evaluate_answer_robust(question, user_answer)
             
             with st.expander(f"Question {i + 1}: {'✅ Correct' if is_correct else '❌ Incorrect'}"):
                 st.write(f"**Question:** {question.question_text}")
@@ -502,6 +504,61 @@ class StudyBuddyUI:
                 st.info("You can close this window or restart the app when needed.")
                 sys.exit(0)
     
+    def _evaluate_answer_robust(self, question, user_answer) -> bool:
+        """Robustly evaluate if the user answer is correct."""
+        if not user_answer:
+            return False
+            
+        import re
+        
+        # 1. Direct match
+        if user_answer == question.correct_answer:
+            return True
+            
+        # 2. Match by index (if correct_answer is 'A', 'B', 'C', or 'D')
+        ca = str(question.correct_answer).strip().upper()
+        if ca in ['A', 'B', 'C', 'D']:
+            idx = ord(ca) - ord('A')
+            if 0 <= idx < len(question.options):
+                correct_option_text = question.options[idx]
+                if user_answer == correct_option_text:
+                    return True
+                    
+        # 3. Match by letter prefix (if user_answer is 'A. Option Text')
+        m = re.match(r"^\s*([A-Da-d])\s*[\.|\)]?\s*(.*)$", str(user_answer))
+        if m:
+            user_letter = m.group(1).upper()
+            if user_letter == ca:
+                return True
+            
+            # Also check if the text part matches the correct option text
+            user_text = m.group(2).strip().lower()
+            if ca in ['A', 'B', 'C', 'D']:
+                idx = ord(ca) - ord('A')
+                if 0 <= idx < len(question.options):
+                    correct_text = question.options[idx].strip().lower()
+                    if user_text == correct_text:
+                        return True
+
+        # 4. Normalized text match
+        def normalize(s):
+            return re.sub(r"\s+", " ", str(s)).strip().lower()
+            
+        ua_norm = normalize(user_answer)
+        
+        # Check if user answer matches any option text that is the correct one
+        if ca in ['A', 'B', 'C', 'D']:
+            idx = ord(ca) - ord('A')
+            if 0 <= idx < len(question.options):
+                if ua_norm == normalize(question.options[idx]):
+                    return True
+        else:
+            # If correct_answer is not a letter, compare it directly with normalized user answer
+            if ua_norm == normalize(question.correct_answer):
+                return True
+                
+        return False
+
     def _reset_quiz(self):
         """Reset quiz state while keeping cached material."""
         st.session_state.quiz_started = False

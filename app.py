@@ -7,6 +7,7 @@ import os
 import sys
 import json
 import streamlit as st
+import re
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
 
@@ -162,7 +163,41 @@ class SmartStudyBuddy:
         Returns:
             Dictionary with evaluation results
         """
-        is_correct = user_answer == question.correct_answer
+        # Convert answers (user or stored) to zero-based option indices for comparison
+        def _answer_to_index(q: Question, ans: Optional[str]) -> Optional[int]:
+            if not ans:
+                return None
+            s_raw = ans.strip()
+            # Leading letter like 'A', 'A.' or 'A)'
+            m = re.match(r"^\s*([A-Da-d])\s*[\.|\)]?\s*(.*)$", s_raw)
+            if m:
+                return ord(m.group(1).upper()) - ord('A')
+
+            s = re.sub(r"\s+", " ", s_raw).strip().lower()
+            for idx, opt in enumerate(q.options or []):
+                opt_norm = re.sub(r"\s+", " ", (opt or "")).strip().lower()
+                if s == opt_norm or s in opt_norm or opt_norm in s:
+                    return idx
+
+            return None
+
+        user_idx = _answer_to_index(question, user_answer)
+        # Determine correct index either from a letter or by matching option text
+        correct_idx = None
+        if question.correct_answer:
+            ca = (question.correct_answer or '').strip()
+            if re.match(r"^[A-Da-d]$", ca):
+                correct_idx = ord(ca.upper()) - ord('A')
+            else:
+                correct_idx = _answer_to_index(question, ca)
+
+        is_correct = (user_idx is not None and correct_idx is not None and user_idx == correct_idx)
+        # Final fallback: if user provided full option text that equals the correct option, accept it
+        if not is_correct and correct_idx is not None and user_answer:
+            ua_norm = re.sub(r"\s+", " ", user_answer.strip()).lower()
+            correct_opt = (question.options or [])[correct_idx] if (question.options and len(question.options) > correct_idx) else None
+            if correct_opt and ua_norm == re.sub(r"\s+", " ", correct_opt.strip()).lower():
+                is_correct = True
         
         # Save to progress tracker
         if self.tracker:
@@ -241,10 +276,38 @@ class SmartStudyBuddy:
         correct_count = 0
         total_questions = len(questions)
         
+        def _answer_to_index_local(q: Question, ans: Optional[str]) -> Optional[int]:
+            if not ans:
+                return None
+            s_raw = ans.strip()
+            m = re.match(r"^\s*([A-Da-d])\s*[\.|\)]?\s*(.*)$", s_raw)
+            if m:
+                return ord(m.group(1).upper()) - ord('A')
+            s = re.sub(r"\s+", " ", s_raw).strip().lower()
+            for idx, opt in enumerate(q.options or []):
+                opt_norm = re.sub(r"\s+", " ", (opt or "")).strip().lower()
+                if s == opt_norm or s in opt_norm or opt_norm in s:
+                    return idx
+            return None
+
         for i, question in enumerate(questions):
             user_answer = answers.get(i)
-            is_correct = user_answer == question.correct_answer
-            
+            user_idx = _answer_to_index_local(question, user_answer)
+            correct_idx = None
+            if question.correct_answer:
+                ca = (question.correct_answer or '').strip()
+                if re.match(r"^[A-Da-d]$", ca):
+                    correct_idx = ord(ca.upper()) - ord('A')
+                else:
+                    correct_idx = _answer_to_index_local(question, ca)
+
+            is_correct = (user_idx is not None and correct_idx is not None and user_idx == correct_idx)
+            if not is_correct and correct_idx is not None and user_answer:
+                ua_norm = re.sub(r"\s+", " ", user_answer.strip()).lower()
+                correct_opt = (question.options or [])[correct_idx] if (question.options and len(question.options) > correct_idx) else None
+                if correct_opt and ua_norm == re.sub(r"\s+", " ", correct_opt.strip()).lower():
+                    is_correct = True
+
             if is_correct:
                 correct_count += 1
             
